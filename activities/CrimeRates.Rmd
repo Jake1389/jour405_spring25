@@ -6,10 +6,18 @@ Follow along with the demo to learn how to calculate crime rates using R and the
 
 ### Task 1: Load the tidyverse and install and load janitor
 
+```{r}
+library(tidyverse)
+install.packages("janitor")
+library(janitor)
+```
 
 
 ### Task 2: Load the crime dataset from https://raw.githubusercontent.com/dwillis/jour405/refs/heads/main/data/md_annual_crime.csv
 
+```{r}
+crimes <- read_csv("https://raw.githubusercontent.com/dwillis/jour405/refs/heads/main/data/md_annual_crime.csv") |> clean_names()
+```
 
 
 ### Task 3: Use janitor to clean up the column names
@@ -18,17 +26,23 @@ Follow along with the demo to learn how to calculate crime rates using R and the
 
 ### Task 4: Calculate the total crime rate for each year (picking our unit!)
 
+```{r}
+crimes |> mutate(total_rate = grand_total/population * 10000)
+```
 
 
 ### Task 5: Calculate the violent and property crime rates for each year (same unit)
 
-
+```{r}
+crimes |> mutate(violent_rate = violent_crime_total/population * 10000)
+crimes |> mutate(property_rate = property_crime_total/population * 10000)
+```
 
 ### Task 6: Describe our results
 
 Write a few sentences about what you found in the data. What years had the highest crime rates? What years had the lowest crime rates? Does the pattern match your expectations?
 
-
+The highest crime rate was in 1981, the 80s in general had higher rates. By contrast, the late 2010s to 2020 saw that rate decrease by over half, so it is clear that crime has gone down. The rate of violent and property crime follow this trend, with 2020 seeing low rates in both. This absolutely did not match my expectations -- with how much the media stresses how crime has been such a prevalent issue, I honestly thought it would be much worse. It's good to see that there has actually been a lot of progress made in the crime area over the past 40 years. This is an example of why it's so important to look at data to actually come to conclusions about key issues.
 
 
 When you are done, save your work, switch to GitHub Desktop, then add, commit and push your changes to GitHub and submit the URL of the notebook in ELMS.

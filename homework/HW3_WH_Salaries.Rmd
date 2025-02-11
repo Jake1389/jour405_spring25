@@ -23,7 +23,7 @@ wh_salaries <-read_csv("https://raw.githubusercontent.com/dwillis/jour405/refs/h
 
 You should examine that dataframe carefully by clicking on it in the Environment tab in RStudio. Write a couple of sentences describing the categories of incidents. From a reporting standpoint, what stands out to you about this data? Are there any salary values that will cause problems for analysis?
 
-There are massive fluctuations in the values of salaries for white house workers. For example, a special policy advisor (Peter A. Devine) literally earns nothing, while a deputy assistant to the president earns 155,000. These huge deviations in salaries could cause issues in analysis, as there is just such a large range to go through. The one's that are particularly low, and even zero, stand out to me. It would be interesting to investigate further as to how that can be, especially when there are people in other positions making high wages.
+There are massive fluctuations in the values of salaries for white house workers. For example, a special policy advisor (Peter A. Devine) literally earns nothing, while a deputy assistant to the president earns 155,000. These huge deviations in salaries could cause issues in analysis, as there is just such a large range to go through. The one's that are particularly low, and even zero, stand out to me. It would be interesting to investigate further as to how that can be, especially when there are people in other positions making such high salaries.
 
 ### Task 4: Calculate the Mean and Median of the Salaries
 
