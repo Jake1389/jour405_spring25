@@ -59,3 +59,21 @@ Ocean City was well behind Baltimore in terms of violent crime in 2019. 2020 cha
 ### Task 9: Save Your Work and Put it on GitHub
 
 Save this notebook, then commit it to your local repository. Push the changes to your GitHub repository and submit the URL for this file in ELMS.
+
+## Task 10: HW 5
+
+Using the 2020 violent crime rate, calculate the percentiles using `ntile()`. Save the results to a new dataframe called `md_cities_percentiles`. How many cities are above the 90th percentile?
+
+```{r}
+md_cities_percentile<-md_cities_rates |> mutate(percentile = ntile(violent_rate_2020, 100))
+```
+11 cities are in the 90th percentile, proven by the md_cities_percentile chart.
+
+Calculate the Interquartile Range of the 2020 violent crime rate using `summarize()` and R's `IQR()` function. The syntax is similar to how `mean()` works.
+
+```{r}
+md_cities_change |> summarize(violent_2020_IQR = IQR(violent_rate_2020))
+```
+These results do not change my story idea from the last assignment, as I believe Ocean City is still the most intriguing story to try and tell even with the new information on the 2020 violent crime rate. 
+
+
