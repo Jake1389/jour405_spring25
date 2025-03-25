@@ -1,0 +1,176 @@
+---
+title: "HW9_TestScores"
+name: Jake Kauderer
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+## Did a New Reading Program Lead to Better Scores?
+
+The superintendent recently claimed that a new reading program has improved third-grade reading scores across the school district.
+
+Before the program, third-grade students in the district averaged 72.6 points on standardized reading tests with a standard deviation of 4.8 points.
+
+After implementing the program for one semester, you collected scores from 12 randomly selected classrooms:
+74, 76, 73, 75, 78, 77, 74, 79, 75, 76, 77, 75
+
+As a journalist, you need to determine: **Is there statistical evidence that reading scores have actually improved?**
+
+## Task 1: Organize your data and initial assessment
+
+Before you can run this codeblock, you will need to fill in a value where it says REPLACE_ME. That value can be found in the introduction.
+
+```{r}
+# Known information about reading scores before the new program
+prior_mean <- 72.6  # average score
+prior_sd <- 4.8     # standard deviation
+
+# Reading scores after implementing the new program (12 classrooms)
+new_scores <- c(74, 76, 73, 75, 78, 77, 74, 79, 75, 76, 77, 75) # Replace with the actual scores
+
+# Create a journalist-friendly dataset
+score_data <- tibble(
+  classroom = paste("Classroom", 1:12),
+  reading_score = new_scores
+)
+
+# View the data
+score_data
+```
+
+### Reflection Question 1:
+Based on just looking at the score_data dataframe, have test scores improved? How can you tell?
+
+The test scores have certainly improved. I can tell because the prior mean was just below a 73, while all these scores are a 73 or higher. Just logically it's clear that the scores have improved — whether it's because of the program is a different question. 
+## Task 2: Calculate key statistics
+
+Like Task 1, you will need to replace values where it says REPLACE_ME before running any code.
+
+
+```{r}
+# Calculate statistics based on the new reading scores
+new_stats <- score_data |> 
+  summarise(
+    mean = mean(reading_score),
+    sd = sd(reading_score),
+    n = n()
+  )
+
+new_stats
+```
+
+### Reflection Question 2:
+Looking at the mean and standard deviation of the new scores compared to the previous statistics, what initial observations can you make? What questions might these statistics raise for your reporting?
+
+The mean is higher, with a lower standard deviation, so students did better in the new scoreset with a lower range of possibilities. A question I have is why is the standard deviation so low for a range of around 75 — it's just interesting that all the scores are so similar there (none 80 or above). This also makes me want to look into the new program even more, as the higher mean is further evidence that students did better in this new scoreset. 
+
+## Task 3: Create a column chart
+
+As before, replace any values marked REPLACE_ME based the instructions.
+
+
+```{r}
+# STUDENT TASK: Choose an appropriate fill color for the bars
+my_fill_color <- "darkgreen" # Replace with a color name like "royalblue", "darkgreen", etc.
+
+# Create a visualization comparing new scores to the previous average
+score_data |> 
+ggplot(aes(x = classroom, y = reading_score)) +
+  geom_col(fill = my_fill_color, alpha = 0.8) +
+  geom_hline(yintercept = prior_mean, color = "darkred", size = 1, linetype = "dashed") +
+  annotate("text", x = 2, y = prior_mean - 1, 
+           label = "Previous Average (72.6)", hjust = 0, fontface = "bold", color = "darkred") +
+  labs(
+    title = "Reading Scores After New Program Implementation",
+    subtitle = "Horizontal line shows previous district average of 72.6 points",
+    x = NULL,
+    y = "Reading Test Score",
+    caption = "Source: District Assessment Data"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold", size = 14),
+    plot.subtitle = element_text(size = 10),
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+```
+
+### Reflection Question 3:
+Examine the chart you created, and suggest a better title based on the results of the data, not a description.
+
+The chart shows that all the classroom's scores were equal or higher than before. A better title would be: Reading scores almost entirely went up after new program's implementation.
+
+## Task 4: Perform a hypothesis test
+
+This is where we formally test the superintendent's claim that reading scores have improved. Fill in the REPLACE_ME values as needed, beginning with your hypotheses.
+
+**Hypotheses:**
+Null: The new reading program didn't directly increase reading scores
+Alternative: The new reading program did directly increase reading scores
+
+```{r}
+# Set the significance level for your test
+alpha_level <- 0.05 # Replace with the appropriate value
+
+# Perform a one-sample t-test
+# Since we want to know if scores improved (increased), we use a one-sided test (alternative = "greater")
+t_test_result <- t.test(
+  score_data$reading_score,
+  mu = prior_mean,
+  alternative = "greater"
+)
+
+# Display the results
+t_test_result
+```
+
+### Reflection Question 4:
+What does the p-value tell you, and what doesn't it tell you? How would you explain these results to a non-technical audience while maintaining accuracy?
+
+The p-value being well below 0.05 tells me that there is almost certainly causation between the higher scores and the new reading program. As a number, it doesn't tell me specifics — like which particular group of students benefited the most, what about the program played the largest role in helping the students, etc. It also doesn't tell me for absolute sure that there is causation, it just heavily implies it. To a non-technical audience, I would likely use the mean as a big way of showing the increase, since it is clearly higher in the new scoreset and almost everyone can understand what a mean shows. Also can say how literally every score in the new dataset was higher than the old mean. I could bring up the p-value, which helps show if there is causation (to put it simply), and how it is extremely low — meaning there is a high causation. 
+
+## Task 5: Interpreting the results for your news story
+
+Let's gather all of the important stats we'll need in one place, so we can look at the prior average, the new scores and the results of the t.test, including the confidence interval. Replace any values where it says REPLACE_ME.
+
+
+```{r}
+# Get the p-value
+p_value <- t_test_result$p.value
+
+# Calculate the 95% confidence interval
+ci <- t.test(score_data$reading_score)$conf.int
+
+# Create a tibble to display the key statistics for your story
+story_stats <- tibble(
+  `Previous average` = prior_mean,
+  `New average` = mean(new_scores),
+  `Improvement` = mean(new_scores) - prior_mean,
+  `Percent change` = round(((mean(new_scores) - prior_mean) / prior_mean) * 100, 1),
+  `p-value` = p_value,
+  `Lower bound` = ci[1],
+  `Upper bound` = ci[2],
+  `Confidence level` = "95%"
+)
+
+# Display the key statistics
+story_stats
+```
+
+## Conclusion
+
+### Reflection Question 5:
+Based on these statistics, what would be your headline and lead paragraph for this story? Is there evidence to support the superintendent's claim?
+
+Headline: New reading program brings increases in third-grade student's reading scores.
+
+Graf: With the program utilized, student's across 12 randomly selected classrooms had an average score of 75.75. Before the program was used, students averaged a 72.6 — showing a clear increase throughout. The p-value, which helps show the causation between things, is extremely low — meaning that the program and the boosted test scores are directly intertwined. 
+
+
+### Reflection Question 6:
+What metrics or outcomes beyond test scores might be important to track for assessing reading performance?
+
+One thing would be teacher's observations, like which students are noticeably doing better or worse. Is there a trend maybe? Another would be how much parents are involved, with these students being in only third-grade there's a good chance that if their parents helped them a lot they would do better. That would be interesting to analyze. Another thing to assess would be how the students can read out loud — the written test wouldn't show this, but it is obviously a crucial skill that is part of developing as a reader.
