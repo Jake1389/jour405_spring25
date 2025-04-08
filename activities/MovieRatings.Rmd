@@ -125,6 +125,6 @@ By using the `qchisq(alpha, df, lower.tail = FALSE)` syntax in R, we are explici
 
 Compare the chi-square statistic to the critical value, say whether you would accept or reject the null hypothesis and what that means.
 
-I would reject the null hypothesis since the chi-square statistic is greater than the critical value. This means that the observed frequencies are significantly different from the expected frequencies, proving that the movie ratings are very different from what was expected. 
+I would reject the null hypothesis since the chi-square statistic is greater than the critical value. This means that the observed frequencies are significantly different from the expected frequencies, proving that the movie ratings are very different from what was expected. When I first saw the values I didn't see much of a difference, this shows why it is important to check things over and use proven techniques (like the chi-square) to find how significant a difference is.
 
 It is important to note that the chi-square test only determines if there is a significant difference between the observed and expected frequencies, but it does not provide information about the specific reasons for this difference. Further analysis and investigation would be required to understand the underlying factors contributing to the observed movie rating distribution.
