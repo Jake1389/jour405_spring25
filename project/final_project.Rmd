@@ -1,0 +1,16 @@
+---
+title: "Final Project"
+Jake Kauderer
+output: html_document
+---
+
+
+```{r} 
+library(tidyverse)
+```
+
+### Task 2: Load the data
+
+```{r}
+lacrosse_games2025 <- read_csv("https://github.com/dwillis/NCAALacrosseData/blob/main/data/ncaa_mens_lacrosse_matchstats_2025.csv")
+```
