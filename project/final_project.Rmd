@@ -4,13 +4,97 @@ Jake Kauderer
 output: html_document
 ---
 
+Link to data (via Derek (big thanks)): https://raw.githubusercontent.com/dwillis/jour405/refs/heads/main/data/mlax_matches.csv 
+
+So this data is on lacrosse stats over the past five years into this week. The columns I chose to analyze were saves, ground balls, turnovers and shots to see if there's a heavy correlation in them, respectively, to wins. The results were very telling in that there was very little difference in them for wins versus losses. It's super interesting and makes me wonder what stat might tell more of a story. My question to you would be could I get metrics on different things like shot efficiency, faceoffs and more that might have a larger disparity? Faceoffs particularly interests me, if you could provide any insight on if I could get that data for the past five seasons/how I would go about it, that would be great. Also, do you think there's a story to tell here with the data being so similar for wins and losses with the four categories I analyzed? To me, the differences are so small that I'm not sure there would be, but maybe going about it from the perspective that things truly even out in the end could work? Not positive, would be interested to hear what you think. Also if you have any general recommendations for how I'm going about this, definitely feel free to share!
+
 
 ```{r} 
 library(tidyverse)
 ```
 
+
+Full transparency, chatGPT helped with code, on the syllabus it says it's permitted as long as it's disclosed and the prompt is given for respective codes.  
+
 ### Task 2: Load the data
 
 ```{r}
-lacrosse_games2025 <- read_csv("https://github.com/dwillis/NCAALacrosseData/blob/main/data/ncaa_mens_lacrosse_matchstats_2025.csv")
+lacrosse_games2025 <- read_csv("https://raw.githubusercontent.com/dwillis/jour405/refs/heads/main/data/mlax_matches.csv")
 ```
+
+For this, gave the dataset and then said "I have this dataset above with stats about mens lacrosse from the past five years. I want to gauge if a higher amount of saves actually correlates to wins, can you help me with what code to add to do that?"
+
+```{r}
+lacrosse_games2025 <- lacrosse_games2025 %>%
+  mutate(win = if_else(result == "W", 1, 0))
+```
+```{r}
+lacrosse_games2025 %>%
+  group_by(result) %>%
+  summarize(
+    avg_saves = mean(saves, na.rm = TRUE),
+    median_saves = median(saves, na.rm = TRUE),
+    count = n()
+  )
+```
+```{r}
+ggplot(lacrosse_games2025, aes(x = saves, fill = result)) +
+  geom_histogram(alpha = 0.6, position = "identity", bins = 30) +
+  labs(
+    title = "Distribution of Saves in Wins vs. Losses",
+    x = "Saves", fill = "Game Result"
+  ) +
+  theme_minimal()
+```
+
+Just asked if it could analyze ground balls' correlation to wins instead, gave this.
+
+```{r}
+lacrosse_games2025 %>%
+  group_by(result) %>%
+  summarize(
+    avg_ground_balls = mean(gb, na.rm = TRUE),
+    median_ground_balls = median(gb, na.rm = TRUE),
+    count = n()
+  )
+```
+
+Asked if it could analyze turnovers' correlation to wins, gave this.
+
+```{r}
+
+lacrosse_games2025 %>%
+  group_by(result) %>%
+  summarize(
+    avg_turnovers = mean(to, na.rm = TRUE),
+    median_turnovers = median(to, na.rm = TRUE),
+    count = n()
+  )
+```
+```{r}
+ggplot(lacrosse_games2025, aes(x = to, fill = result)) +
+  geom_histogram(position = "identity", alpha = 0.6, bins = 25) +
+  labs(
+    title = "Turnovers in Wins vs. Losses",
+    x = "Turnovers", fill = "Game Result"
+  ) +
+  theme_minimal()
+```
+Asked if it could analyze shots' correlation to wins instead, gave this.
+```{r}
+lacrosse_games2025 %>%
+  group_by(result) %>%
+  summarize(
+    avg_shots = mean(shots, na.rm = TRUE),
+    median_shots = median(shots, na.rm = TRUE),
+    count = n()
+  )
+```
+
+
+
+
+
+
+
+
