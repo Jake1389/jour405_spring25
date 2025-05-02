@@ -4,6 +4,103 @@ Jake Kauderer
 output: html_document
 ---
 
+So I did a few things here. The first of which you'll see was I used the chi-square test to see if there's a correlation between playing at home and winning. The p-value was 0.23 which is greater than 0.05, signaling there is not a major significance. This in itself is interesting and something I may be able to do more with for this project. One possibility to expand upon this is to try and check for postseason matchups specifically. Is there more of a correlation for a team winning at home then? For this I'd need to compile some new data, but it could be interesting to gauge over like the past five seasons. Next I used z-scores to try and check for outliers, specifically about when teams score over 15 goals and how their turnover differential is in those games. I didn't find much, it only corroborated what I already had that there doesn't seem to be telling disparities in most categories for wins versus losses. Then I used linear regression, trying to gauge if there was a significance in saves and goal differential — there wasn't much, though (high p-value). However, I pivoted to shots correlative to goal differential and there was an extremely low p-value. Overall, the most interesting things I found were the lack of correlation between playing at home and winning, and the correlation between more shots to goal differential. However, I'm not positive what the next best move with these would be. Feel like it would be beneficial if I could figure out how to delve even further and be more specific. I would definitely be interested to hear your feedback. Also, I started out looking at past assignments trying to incorporate things like z-scores, the chi-square test and such. But I was struggling to translate it into the data from this assignment, so I did use TerpAI to help. I wasn't exactly sure how to create a share link so I uploaded the entire conversation into a google doc, let me know if you want it in some other form and I'm happy to help. https://docs.google.com/document/d/1yao0llmk_VJ33RDCWTbQaKU2nc6zPVN4KCZT-La8L0A/edit?tab=t.0 
+
+
+```{r}
+install.packages("vcd")
+library(vcd)
+library(readr)
+```
+
+```{r}
+head(matches)
+```
+```{r}
+# Determine win status based on scores
+win_status <- ifelse(lacrosse_games2025$home_away == "Home" & lacrosse_games2025$home_score > lacrosse_games2025$visitor_score, "Win",
+                     ifelse(lacrosse_games2025$home_away == "Away" & lacrosse_games2025$visitor_score > lacrosse_games2025$home_score, "Win", "Lose"))
+
+# Ensure both win_status and home_away are factors and have the same length
+win_status <- factor(win_status, levels = c("Win", "Lose"))
+home_away <- factor(lacrosse_games2025$home_away, levels = c("Home", "Away"))
+
+# Create a contingency table
+contingency_table <- table(win_status, home_away)
+print(contingency_table)
+```
+```{r}
+chi_square_result <- chisq.test(contingency_table)
+print(chi_square_result)
+```
+
+```{r}
+high_scoring_games <- lacrosse_games2025 %>%
+  filter(home_score >= 15 | visitor_score >= 15)
+```
+```{r}
+# Calculate z-scores
+high_scoring_games$to_z <- scale(high_scoring_games$to)
+high_scoring_games$ct_z <- scale(high_scoring_games$ct)
+
+# Identify outliers (e.g., z-score > 2 or < -2)
+outliers_to <- high_scoring_games %>% filter(abs(to_z) > 2)
+outliers_ct <- high_scoring_games %>% filter(abs(ct_z) > 2)
+```
+```{r}
+correlation_result <- cor(high_scoring_games$to, high_scoring_games$ct)
+print(correlation_result)
+```
+```{r}
+lacrosse_games2025 <- lacrosse_games2025 %>%
+  mutate(goal_differential = abs(home_score - visitor_score))
+```
+```{r}
+# Linear regression model
+lm_model <- lm(goal_differential ~ saves, data = lacrosse_games2025)
+
+# Summary of the model
+summary(lm_model)
+```
+```{r}
+# Load ggplot2 for visualization
+install.packages("ggplot2")
+library(ggplot2)
+
+# Scatter plot with regression line
+ggplot(lacrosse_games2025, aes(x = saves, y = goal_differential)) +
+  geom_point() +
+  geom_smooth(method = "lm", col = "blue") +
+  labs(title = "Saves vs. Goal Differential",
+       x = "Saves",
+       y = "Goal Differential") +
+  theme_minimal()
+```
+```{r}
+# Linear regression model
+lm_model <- lm(goal_differential ~ shots, data = lacrosse_games2025)
+
+# Summary of the model
+summary(lm_model)
+```
+```{r}
+# Load ggplot2 for visualization
+install.packages("ggplot2")
+library(ggplot2)
+
+# Scatter plot with regression line
+ggplot(lacrosse_games2025, aes(x = shots, y = goal_differential)) +
+  geom_point() +
+  geom_smooth(method = "lm", col = "blue") +
+  labs(title = "Shots vs. Goal Differential",
+       x = "Shots",
+       y = "Goal Differential") +
+  theme_minimal()
+```
+
+
+
+
 Final Project: The Tests You Could Run
 
 - To start, z-scores seem like they could be especially useful in analyzing this data (which on the surface doesn't seem to tell a lot since these stats are nearly identical in wins or losses). One possibility is to try and find outlier games (what a z-score could help tell) and analyze them. For example, there are some games where a team scores few goals (3 or below) or a lot (18 or above). I could look at these and try and find out what there's a high correlation in (are teams turning it over less, are they getting a ton of saves, are they shooting incredibly few or many shots, etc). My thought process is that on average there doesn't seem to be enough disparity to tell an insightful story, but possibly looking at those outliers could give something more. Another test I could possibly use is the chi-square test. This could tie back into my original idea for this project of testing if there is a high correlation between teams playing at home and winning (something I have not tested yet). It's a bit of a different idea from all the stats I used below, but it could be interesting, as I could use the chi-square test to find if there is a correlation or not. Another possibility is using ANOVA to find p-values — I could utilize this to maybe combine my ideas in a way? For example, what if I tracked if teams have a higher total of shots at home compared to the road? How about saves and turnovers? Not sure how this would exactly work, but it's an idea I had that could tell something interesting. These three tests, all of which we covered pretty recently, seem like they could be useful in helping me find a story to tell out of this lacrosse data. However, obviously you have more experience and I'm definitely interested to hear what you're thinking about where I'm at.  
