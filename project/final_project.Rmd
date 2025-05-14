@@ -4,14 +4,28 @@ Jake Kauderer
 output: html_document
 ---
 
-So I did a few things here. The first of which you'll see was I used the chi-square test to see if there's a correlation between playing at home and winning. The p-value was 0.23 which is greater than 0.05, signaling there is not a major significance. This in itself is interesting and something I may be able to do more with for this project. One possibility to expand upon this is to try and check for postseason matchups specifically. Is there more of a correlation for a team winning at home then? For this I'd need to compile some new data, but it could be interesting to gauge over like the past five seasons. Next I used z-scores to try and check for outliers, specifically about when teams score over 15 goals and how their turnover differential is in those games. I didn't find much, it only corroborated what I already had that there doesn't seem to be telling disparities in most categories for wins versus losses. Then I used linear regression, trying to gauge if there was a significance in saves and goal differential — there wasn't much, though (high p-value). However, I pivoted to shots correlative to goal differential and there was an extremely low p-value. Overall, the most interesting things I found were the lack of correlation between playing at home and winning, and the correlation between more shots to goal differential. However, I'm not positive what the next best move with these would be. Feel like it would be beneficial if I could figure out how to delve even further and be more specific. I would definitely be interested to hear your feedback. Also, I started out looking at past assignments trying to incorporate things like z-scores, the chi-square test and such. But I was struggling to translate it into the data from this assignment, so I did use TerpAI to help. I wasn't exactly sure how to create a share link so I uploaded the entire conversation into a google doc, let me know if you want it in some other form and I'm happy to help. https://docs.google.com/document/d/1yao0llmk_VJ33RDCWTbQaKU2nc6zPVN4KCZT-La8L0A/edit?tab=t.0 
+Link to google doc with TerpAI conversation: https://docs.google.com/document/d/1yao0llmk_VJ33RDCWTbQaKU2nc6zPVN4KCZT-La8L0A/edit?tab=t.0
 
 
+Let's install packages to begin.
 ```{r}
 install.packages("vcd")
 library(vcd)
 library(readr)
+library(ggplot2)
+install.packages("dplyr")
+library(dplyr)
+library(tidyverse)
 ```
+
+Link to the data being used: https://raw.githubusercontent.com/dwillis/jour405/refs/heads/main/data/mlax_matches.csv 
+
+Read the data.
+```{r}
+lacrosse_games2025 <- read_csv("https://raw.githubusercontent.com/dwillis/jour405/refs/heads/main/data/mlax_matches.csv")
+```
+
+Let's try to find some interesting things about NCAA men's lacrosse. The first of which is does playing at home really correlate to winning? The chi-square test can help tell. Let's start by looking at results and determining win status on home versus the road.
 
 ```{r}
 head(matches)
@@ -29,39 +43,102 @@ home_away <- factor(lacrosse_games2025$home_away, levels = c("Home", "Away"))
 contingency_table <- table(win_status, home_away)
 print(contingency_table)
 ```
+Now let's use the chi-square test. This will help us gauge if there is a significance in the win percentage on home versus the road.
 ```{r}
 chi_square_result <- chisq.test(contingency_table)
 print(chi_square_result)
 ```
+The p-value here is above 0.05 at 0.23, signifying that there is a minimal correlation between playing at home and winning. Perhaps home-field advantage doesn't matter as much as the average person might think? How about we check for further specifics, like goal differential? Let's start by creating a variable for it. 
 
-```{r}
-high_scoring_games <- lacrosse_games2025 %>%
-  filter(home_score >= 15 | visitor_score >= 15)
-```
-```{r}
-# Calculate z-scores
-high_scoring_games$to_z <- scale(high_scoring_games$to)
-high_scoring_games$ct_z <- scale(high_scoring_games$ct)
-
-# Identify outliers (e.g., z-score > 2 or < -2)
-outliers_to <- high_scoring_games %>% filter(abs(to_z) > 2)
-outliers_ct <- high_scoring_games %>% filter(abs(ct_z) > 2)
-```
-```{r}
-correlation_result <- cor(high_scoring_games$to, high_scoring_games$ct)
-print(correlation_result)
-```
 ```{r}
 lacrosse_games2025 <- lacrosse_games2025 %>%
   mutate(goal_differential = abs(home_score - visitor_score))
 ```
+
+Let's check out the statistics for home versus road goal differential.
+
+```{r}
+home_games <- lacrosse_games2025 %>%
+  filter(home_away == "Home")
+
+road_games <- lacrosse_games2025 %>%
+  filter(home_away == "Away")
+
+# Summary statistics for home games
+summary(home_games$goal_differential)
+
+# Summary statistics for road games
+summary(road_games$goal_differential)
+```
+These means seem very similar. Let's use the t-test to see if we can tell anything further about home vs road goal differential. 
+```{r}
+t_test_result <- t.test(home_games$goal_differential, road_games$goal_differential)
+print(t_test_result)
+```
+
+As we can see from the summary above, there's minimal difference in the mean goal differential at home versus on the road. Also, the t-test score is close to 0, meaning that the observed difference here is likely pretty random and there is not much significance. With a high p-value, everything points to a lack of correlation here. How about using a scatter plot and linear regression model to further tell?
+
+Create the variables.
+```{r}
+lacrosse_games2025$goal_differential <- abs(lacrosse_games2025$home_score - lacrosse_games2025$visitor_score)
+lacrosse_games2025$home_away <- factor(lacrosse_games2025$home_away, levels = c("Home", "Away"))
+```
+Make the scatterplot.
+```{r}
+# Scatter plot
+ggplot(lacrosse_games2025, aes(x = home_away, y = goal_differential)) +
+  geom_jitter(width = 0.2) +
+  labs(title = "Scatter Plot of Goal Differential by Game Location",
+       x = "Game Location",
+       y = "Goal Differential") +
+  theme_minimal()
+```
+It's very tough to tell anything from the scatterplot due to the huge quantity of games. It's nearly indistinguishable, so let's try using a linear regression model to get more in-depth insights. 
 ```{r}
 # Linear regression model
+lm_model <- lm(goal_differential ~ home_away, data = lacrosse_games2025)
+
+# Summary of the model
+summary(lm_model)
+```
+This is where the model helps, we can see a low R-squared value and a high p-value. These both indicate a lack of significance, further proving that playing at home doesn't have much of an effect on goal differential. Even the F-statistic is low, further corroborating this idea. It's fascinating how the "road warrior" ethos may be overblown, with little difference shown here in playing at home versus on the road.
+
+What other telling stories can we find about NCAA men's lacrosse? How about whether more shots and saves leads to a better goal differential? This could be interesting since often teams shoot more when trailing, and they could have more saves if their goalkeeper is under constant pressure. But maybe I'm overthinking it — maybe more of those two stats would correlate to wins? Let's try to find out.
+
+Lets mutate to create a stat of shots + saves and use linear regression to see the correlation with goal differential. Will we find anything telling?
+
+```{r}
+lacrosse_games2025 <- lacrosse_games2025 %>%
+  mutate(shots_saves = shots + saves)
+# Linear regression model
+lm_model <- lm(goal_differential ~ shots_saves, data = lacrosse_games2025)
+
+# Summary of the model
+summary(lm_model)
+```
+The p-value here is telling at well below 0.05. The residuals may be a bit large here though, so maybe we should try the variables on their own. Is one of goals or saves more correlated to goal differential? Let's find out, because there clearly is a significance with at least one of them compared to goal differential. 
+
+Let's start with saves.
+
+```{r}
+# Linear regression model (just saves here)
 lm_model <- lm(goal_differential ~ saves, data = lacrosse_games2025)
 
 # Summary of the model
 summary(lm_model)
 ```
+There's a high p-value here, indicating that saves may not have a high correlation to goal differential. Additionally, the F-statistic is very low, signifying a minimal correlation. This can make sense since a goalkeeper could be recording a lot of saves if he is under immense pressure. This is good to know, now let's look at shots.
+
+```{r}
+# Linear regression model (just shots here)
+lm_model <- lm(goal_differential ~ shots, data = lacrosse_games2025)
+
+# Summary of the model
+summary(lm_model)
+```
+There is a low p-value here, well below 0.05. The F-statistic is 11.05, much higher than for just saves, further corroborating that more shots correlates to a superior goal differential. Through our tests here, we seemed to have found something telling — more shots leads to a superior goal differential. Let's visualize the two charts (saves and shots) and see if we can tell the difference. 
+
+
 ```{r}
 # Load ggplot2 for visualization
 install.packages("ggplot2")
@@ -76,13 +153,8 @@ ggplot(lacrosse_games2025, aes(x = saves, y = goal_differential)) +
        y = "Goal Differential") +
   theme_minimal()
 ```
-```{r}
-# Linear regression model
-lm_model <- lm(goal_differential ~ shots, data = lacrosse_games2025)
+There's the saves scatterplot, a pretty linear line as expected based off the linear regression we did. Now let's check out shots. 
 
-# Summary of the model
-summary(lm_model)
-```
 ```{r}
 # Load ggplot2 for visualization
 install.packages("ggplot2")
@@ -97,107 +169,94 @@ ggplot(lacrosse_games2025, aes(x = shots, y = goal_differential)) +
        y = "Goal Differential") +
   theme_minimal()
 ```
+Here we can clearly see that as shots increase, the goal differential also increases. This is a contrast from the saves scatterplot, which is almost entirely a straight line. 
 
-
-
-
-Final Project: The Tests You Could Run
-
-- To start, z-scores seem like they could be especially useful in analyzing this data (which on the surface doesn't seem to tell a lot since these stats are nearly identical in wins or losses). One possibility is to try and find outlier games (what a z-score could help tell) and analyze them. For example, there are some games where a team scores few goals (3 or below) or a lot (18 or above). I could look at these and try and find out what there's a high correlation in (are teams turning it over less, are they getting a ton of saves, are they shooting incredibly few or many shots, etc). My thought process is that on average there doesn't seem to be enough disparity to tell an insightful story, but possibly looking at those outliers could give something more. Another test I could possibly use is the chi-square test. This could tie back into my original idea for this project of testing if there is a high correlation between teams playing at home and winning (something I have not tested yet). It's a bit of a different idea from all the stats I used below, but it could be interesting, as I could use the chi-square test to find if there is a correlation or not. Another possibility is using ANOVA to find p-values — I could utilize this to maybe combine my ideas in a way? For example, what if I tracked if teams have a higher total of shots at home compared to the road? How about saves and turnovers? Not sure how this would exactly work, but it's an idea I had that could tell something interesting. These three tests, all of which we covered pretty recently, seem like they could be useful in helping me find a story to tell out of this lacrosse data. However, obviously you have more experience and I'm definitely interested to hear what you're thinking about where I'm at.  
-
-
-
-Link to data (via Derek (big thanks)): https://raw.githubusercontent.com/dwillis/jour405/refs/heads/main/data/mlax_matches.csv 
-
-So this data is on lacrosse stats over the past five years into this week. The columns I chose to analyze were saves, ground balls, turnovers and shots to see if there's a heavy correlation in them, respectively, to wins. The results were very telling in that there was very little difference in them for wins versus losses. It's super interesting and makes me wonder what stat might tell more of a story. My question to you would be could I get metrics on different things like shot efficiency, faceoffs and more that might have a larger disparity? Faceoffs particularly interests me, if you could provide any insight on if I could get that data for the past five seasons/how I would go about it, that would be great. Also, do you think there's a story to tell here with the data being so similar for wins and losses with the four categories I analyzed? To me, the differences are so small that I'm not sure there would be, but maybe going about it from the perspective that things truly even out in the end could work? Not positive, would be interested to hear what you think. Also if you have any general recommendations for how I'm going about this, definitely feel free to share!
-
-
-```{r} 
-library(tidyverse)
-```
-
-
-Full transparency, chatGPT helped with code, on the syllabus it says it's permitted as long as it's disclosed and the prompt is given for respective codes.  
-
-### Task 2: Load the data
+Let's take this a step further. Shots are great, but I expect efficiency would matter. Does more shots on goal specifically lead to a higher correlation in goal differential. Let's run some code and compare it to just shots, starting with linear regression.
 
 ```{r}
-lacrosse_games2025 <- read_csv("https://raw.githubusercontent.com/dwillis/jour405/refs/heads/main/data/mlax_matches.csv")
-```
+# Linear regression model (just shots here)
+lm_model <- lm(goal_differential ~ sog, data = lacrosse_games2025)
 
-For this, gave the dataset and then said "I have this dataset above with stats about mens lacrosse from the past five years. I want to gauge if a higher amount of saves actually correlates to wins, can you help me with what code to add to do that?"
+# Summary of the model
+summary(lm_model)
+```
+Extremely low p-value here and high F-statistic, it seems like we may found a huge correlative to goal differential with shots on goal here. Let's create a scatterplot to visualize and compare.
+
+
+```{r}
+# Load ggplot2 for visualization
+install.packages("ggplot2")
+library(ggplot2)
+
+# Scatter plot with regression line
+ggplot(lacrosse_games2025, aes(x = sog, y = goal_differential)) +
+  geom_point() +
+  geom_smooth(method = "lm", col = "blue") +
+  labs(title = "Shots on goal vs. Goal Differential",
+       x = "Shots on goal",
+       y = "Goal Differential") +
+  theme_minimal()
+```
+We can see this line goes up the most of any of the three scatterplots made thus far. There's evidently a huge correlation between shots on goal and goal differential. I thought there was a chance this would not be the case, think about if a team is losing big and having to shoot a lot of shots on goal to try and comeback. But there is a clear correlation between shots on goal and goal differential. This seems like a solid metric to gauge success in men's lacrosse. 
+
+But what about some of the other, maybe less well-known stats? Like groundballs, defensive caused turnovers and assists? Is there some correlation between them and goal differential? This time let's use multiple regression and try to find out.
+
+```{r}
+# Multiple regression model
+multi_reg_model <- lm(goal_differential ~ defensive_ct + gb + assists, data = lacrosse_games2025)
+
+# Summary of the model
+summary(multi_reg_model)
+```
+Right away we can see the three coefficients. Groundballs stand out as having a high p-value, while the other two are much lower. The F-statistic is high here, which tells that this model is significant. The R-squared value does tell that there are likely many other factors for goal differential. That is ok, we are just trying to gauge the significance of a select few here. Now let's test defensive caused turnovers and assists individually, starting with the latter. We aren't doing groundballs since they seem pretty insignificant. 
+
+```{r}
+# Regression model for assists
+assists_model <- lm(goal_differential ~ assists, data = lacrosse_games2025)
+
+# Summary of the model
+summary(assists_model)
+```
+The p-value is very low here. With a very high F-statistic, it's clear that assists are correlative to better goal differential. I guess passing pays off! This isn't too surprising. Even right now, No. 1-seed Cornell scores the most goals per game and averages the most assists. Good to know, but nothing crazy here. Let's check out the more subtle stat now — defensive caused turnovers.
+
+```{r}
+# Regression model for defensive caused turnovers
+defensive_ct_model <- lm(goal_differential ~ defensive_ct, data = lacrosse_games2025)
+
+# Summary of the model
+summary(defensive_ct_model)
+```
+Very low p-value here, meaning there is some significance present. The F-statistic isn't as high as for assists, but it still seems like there is something here. Defensive caused turnovers matter for success in men's lacrosse. Shots on goal and caused turnovers come from opposite sides of the ball but seem to both greatly matter. But what if we combine them? What will we be able to tell? Let's find out, starting by making a model.
+
+```{r}
+# Regression model with defensive caused turnovers and shots
+multi_predictor_model <- lm(goal_differential ~ defensive_ct + sog, data = lacrosse_games2025)
+
+# Summary of the model
+summary(multi_predictor_model)
+```
+As expected from before, both come across as significant. Let's go further, first by putting in for goal differential again and then mutating to create a variable that combines the shots and defensive caused turnovers.
 
 ```{r}
 lacrosse_games2025 <- lacrosse_games2025 %>%
-  mutate(win = if_else(result == "W", 1, 0))
+  mutate(goal_differential = abs(home_score - visitor_score),
+         combined_shots_ct = sog + defensive_ct)
 ```
+
+Now let's plot it.
+
 ```{r}
-lacrosse_games2025 %>%
-  group_by(result) %>%
-  summarize(
-    avg_saves = mean(saves, na.rm = TRUE),
-    median_saves = median(saves, na.rm = TRUE),
-    count = n()
-  )
-```
-```{r}
-ggplot(lacrosse_games2025, aes(x = saves, fill = result)) +
-  geom_histogram(alpha = 0.6, position = "identity", bins = 30) +
-  labs(
-    title = "Distribution of Saves in Wins vs. Losses",
-    x = "Saves", fill = "Game Result"
-  ) +
+# Combined scatter plot
+ggplot(lacrosse_games2025, aes(x = combined_shots_ct, y = goal_differential)) +
+  geom_point() +
+  geom_smooth(method = "lm", col = "purple") +
+  labs(title = "Goal Differential vs. Combined Shots and Defensive Caused Turnovers",
+       x = "Combined Shots + Defensive Caused Turnovers",
+       y = "Goal Differential") +
   theme_minimal()
 ```
+We can see the line goes up with a pretty large slope here, further showing the importance of both of these stats.
 
-Just asked if it could analyze ground balls' correlation to wins instead, gave this.
+Overall, we found some interesting things with this code. Shots on goal and defensive caused turnovers both have a large impact on goal differential, as the scatterplot tells. The former may be more obvious and less appealing, though I think there are angles that could interesting in telling a story on it. Like does a team have to pass a lot to be successful? Are there exceptions with teams who thrive in one-on-one play? Patterns? For defensive caused turnovers, that is fascinating and further research would be useful to find out more specifics. Is there an extent to when caused turnovers start or stop making a difference? Is there some numeric threshold that if a team passes in terms of caused turnovers they'll be in great shape? Does more caused turnovers lead to a better shooting percentage? Are there teams that don't force many turnovers but still thrive? All of these would be relevant next steps to take in reporting on these stats. 
 
-```{r}
-lacrosse_games2025 %>%
-  group_by(result) %>%
-  summarize(
-    avg_ground_balls = mean(gb, na.rm = TRUE),
-    median_ground_balls = median(gb, na.rm = TRUE),
-    count = n()
-  )
-```
-
-Asked if it could analyze turnovers' correlation to wins, gave this.
-
-```{r}
-
-lacrosse_games2025 %>%
-  group_by(result) %>%
-  summarize(
-    avg_turnovers = mean(to, na.rm = TRUE),
-    median_turnovers = median(to, na.rm = TRUE),
-    count = n()
-  )
-```
-```{r}
-ggplot(lacrosse_games2025, aes(x = to, fill = result)) +
-  geom_histogram(position = "identity", alpha = 0.6, bins = 25) +
-  labs(
-    title = "Turnovers in Wins vs. Losses",
-    x = "Turnovers", fill = "Game Result"
-  ) +
-  theme_minimal()
-```
-Asked if it could analyze shots' correlation to wins instead, gave this.
-```{r}
-lacrosse_games2025 %>%
-  group_by(result) %>%
-  summarize(
-    avg_shots = mean(shots, na.rm = TRUE),
-    median_shots = median(shots, na.rm = TRUE),
-    count = n()
-  )
-```
-
-
-
-
-
-
-
-
+But if I was drafting a story based off this data, I would go with one about the lack of correlation between playing at home in lacrosse and winning. I feel this is a relevant story as it involves fans greatly, and can go across sports as a broad topic. My main findings were that goal differential was virtually the same at home versus on the road. The chi-square test helped prove the lack of significance with a high p-value present. A potential problem is that this lack of a disparity could be attributed to the level of teams in men's lacrosse. For example, a poor team in a good conference may be losing a ton of home games, while the top teams dominate at home. A smart next move for this story would be to try and narrow the scope. Are bottom teams lowering the curve? Do top teams generally dominate at home more than on the road? How about those teams around .500, what's the deal with their home-field advantage? These are key questions to answer. I do think there's some very fun angles to potentially take with this. Like in the postseason when a team plays at home, does that make a big impact? Considering teams in the NCAA tournament get only one home game (and that's only if they're a top-eight seed), this could be fascinating to gauge. Is that higher seeding really that important, or does it not matter that much? Another fun angle could be does the state a team play in make a major difference? Does a lacrosse hotbed like Maryland have a greater home-field advantage then a lesser-populated lacrosse area like Ohio? Data might be tough to compile for something like that, but it could be a super fun story if possible. A person could also check out other stats at home versus the road to see if there's something significant there. These are just a few ideas, I think any of them could make for a great story, though  more research is required to gauge significance of respective ideas. Once I have a topic I'd start reaching out to people in the lacrosse realm. Coaches would be a big one since they have so much experience playing at home versus on the road. Do they feel it truly matters? It would be key to gauge players' thoughts too. Even lacrosse experts could be fun to speak with. Do those guys who make money watching and talking about games think it really matters? Does it factor into their predictions? Or do they already know that the "road warrior" ethos may be overblown without my tests to prove it? Overall, I think the idea that playing at home is insignificant is fascinating — this would be the story I go for. The first thing I'd do is compile more data to figure out the angle from which I approach the story. 
